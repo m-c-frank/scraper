@@ -1,0 +1,8 @@
+playwright
+requests
+pydantic
+pytz
+paho-mqtt
+beautifulsoup4
+sqlalchemy
+psycopg2-binary

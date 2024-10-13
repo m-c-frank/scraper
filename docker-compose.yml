@@ -1,0 +1,51 @@
+services:
+  database:
+    image: postgres:latest
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=scraper_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  messaging:
+    build:
+      context: ./services/messaging
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      - ./services/messaging/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./services/messaging/passwordfile:/mosquitto/config/passwordfile
+
+  scraper:
+    build: ./services/scraper
+    environment:
+      - SCRAPE_INTERVAL=60
+      - MQTT_BROKER=messaging
+      - MQTT_USERNAME=${MQTT_USERNAME}
+      - MQTT_PASSWORD=${MQTT_PASSWORD}
+      - MQTT_TOPIC=scraper
+      - DATABASE_URL=postgresql://user:password@database:5432/scraper_db
+    depends_on:
+      - database
+      - messaging
+
+  telegram:
+    build: ./services/telegram
+    environment:
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - MQTT_BROKER=messaging
+      - MQTT_USERNAME=${MQTT_USERNAME}
+      - MQTT_PASSWORD=${MQTT_PASSWORD}
+      - MQTT_TOPIC=scraper
+      - DATABASE_URL=postgresql://user:password@database:5432/scraper_db
+    depends_on:
+      - database
+      - messaging
+
+volumes:
+  db_data:
